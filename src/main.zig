@@ -1,24 +1,33 @@
 const std = @import("std");
+const json = @import("json.zig");
 
-pub fn main() !void {
-    // Prints to stderr (it's a shortcut based on `std.io.getStdErr()`)
-    std.debug.print("All your {s} are belong to us.\n", .{"codebase"});
+const HaversinePair = struct {
+    x0: f64,
+    y0: f64,
+    x1: f64,
+    y1: f64,
+};
 
-    // stdout is for the actual output of your application, for example if you
-    // are implementing gzip, then only the compressed bytes should be sent to
-    // stdout, not any debugging messages.
-    const stdout_file = std.io.getStdOut().writer();
-    var bw = std.io.bufferedWriter(stdout_file);
-    const stdout = bw.writer();
+pub fn parseHaversinePairs(input_json: []const u8, max_pair_count: u64, pairs: *HaversinePair, allocator: std.mem.Allocator) u64 {
+    var pair_count: u64 = 0;
 
-    try stdout.print("Run `zig build test` to run the tests.\n", .{});
+    const root = json.parseJson(input_json, allocator);
+    const pair_array = json.lookupElement(json, "pairs");
+    if (pair_array) |array| {
+        var element = array.first_sub_element;
+        while (element and pair_count < max_pair_count) |el| {
+            pair_count += 1;
+            const pair = pairs + pair_count;
 
-    try bw.flush(); // don't forget to flush!
+            pair.x0 = json.convertElementToF64(el, "x0");
+            pair.y0 = json.convertElementToF64(el, "y0");
+            pair.x1 = json.convertElementToF64(el, "x1");
+            pair.y1 = json.convertElementToF64(el, "y1");
+        }
+    }
+
+    json.freeJson(root, allocator);
+    return pair_count;
 }
 
-test "simple test" {
-    var list = std.ArrayList(i32).init(std.testing.allocator);
-    defer list.deinit(); // try commenting this out and see if zig detects the memory leak!
-    try list.append(42);
-    try std.testing.expectEqual(@as(i32, 42), list.pop());
-}
+pub fn main() !void {}
