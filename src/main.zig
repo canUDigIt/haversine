@@ -1,5 +1,6 @@
 const std = @import("std");
 const json = @import("json.zig");
+const haversine = @import("haversine.zig");
 
 const HaversinePair = struct {
     x0: f64,
@@ -8,26 +9,114 @@ const HaversinePair = struct {
     y1: f64,
 };
 
-pub fn parseHaversinePairs(input_json: []const u8, max_pair_count: u64, pairs: *HaversinePair, allocator: std.mem.Allocator) u64 {
+fn parseHaversinePairs(input_json: []const u8, max_pair_count: u64, pairs: []HaversinePair, allocator: std.mem.Allocator) !u64 {
     var pair_count: u64 = 0;
 
-    const root = json.parseJson(input_json, allocator);
-    const pair_array = json.lookupElement(json, "pairs");
-    if (pair_array) |array| {
-        var element = array.first_sub_element;
-        while (element and pair_count < max_pair_count) |el| {
-            pair_count += 1;
-            const pair = pairs + pair_count;
+    const root = try json.parseJson(input_json, allocator);
+    if (root) |r| {
+        const pair_array = json.lookupElement(r, "pairs");
+        if (pair_array) |array| {
+            var element = array.first_sub_element;
+            if (element) |el| {
+                while (pair_count < max_pair_count) {
+                    var pair = &pairs[pair_count];
 
-            pair.x0 = json.convertElementToF64(el, "x0");
-            pair.y0 = json.convertElementToF64(el, "y0");
-            pair.x1 = json.convertElementToF64(el, "x1");
-            pair.y1 = json.convertElementToF64(el, "y1");
+                    pair.*.x0 = json.convertElementToF64(el, "x0");
+                    pair.*.y0 = json.convertElementToF64(el, "y0");
+                    pair.*.x1 = json.convertElementToF64(el, "x1");
+                    pair.*.y1 = json.convertElementToF64(el, "y1");
+
+                    pair_count += 1;
+                }
+            }
         }
+
+        json.freeJson(r, allocator);
     }
 
-    json.freeJson(root, allocator);
     return pair_count;
 }
 
-pub fn main() !void {}
+fn sumHaversineDistances(count: u64, pairs: []HaversinePair) f64 {
+    var sum: f64 = 0;
+
+    const sum_coef: f64 = 1.0 / @as(f64, @floatFromInt(count));
+    for (pairs) |pair| {
+        const earth_radius = 6372.8;
+        const dist = haversine.referenceHaversine(pair.x0, pair.y0, pair.x1, pair.y1, earth_radius);
+        sum += sum_coef * dist;
+    }
+    return sum;
+}
+
+fn readEntireFile(name: []const u8, allocator: std.mem.Allocator) ![]u8 {
+    const file = try std.fs.cwd().openFile(name, .{});
+    defer file.close();
+    const file_stat = try file.stat();
+    const filesize = file_stat.size;
+
+    const file_bytes = try file.readToEndAlloc(allocator, filesize);
+    return file_bytes;
+}
+
+pub fn main() !void {
+    const allocator = std.heap.page_allocator;
+    const args = try std.process.argsAlloc(allocator);
+    defer std.process.argsFree(allocator, args);
+
+    const stdOut = std.io.getStdOut().writer();
+    const stdErr = std.io.getStdErr().writer();
+
+    if ((args.len != 2) and (args.len != 3)) {
+        try stdErr.print("{d} args\n", .{args.len});
+        try stdErr.print("Usage: {s} [haversine_input.json]\n", .{args[0]});
+        try stdErr.print("       {s} [haversine_input.json] [answers.f64]\n", .{args[0]});
+        return;
+    }
+
+    const json_file = try std.fs.cwd().openFile(args[1], .{});
+    defer json_file.close();
+    const file_stat = try json_file.stat();
+    const filesize = file_stat.size;
+    try stdOut.print("{s} is {d} bytes\n", .{ args[1], filesize });
+
+    const input_json = try json_file.readToEndAlloc(allocator, filesize);
+    defer allocator.free(input_json);
+
+    const minimum_json_pair_encoding: u32 = 6 * 4;
+    const max_pair_count: u64 = input_json.len / minimum_json_pair_encoding;
+
+    if (max_pair_count > 0) {
+        var parsed_values = try std.ArrayList(HaversinePair).initCapacity(allocator, max_pair_count);
+        defer parsed_values.deinit();
+
+        const pair_count = try parseHaversinePairs(input_json, max_pair_count, parsed_values.items, allocator);
+        const sum = sumHaversineDistances(pair_count, parsed_values.items);
+
+        try stdOut.print("Input size: {d}\n", .{input_json.len});
+        try stdOut.print("Pair count: {d}\n", .{pair_count});
+        try stdOut.print("Haversine sum: {d:.16}\n", .{sum});
+
+        if (args.len == 3) {
+            const answers_f64 = try readEntireFile(args[2], allocator);
+            defer allocator.free(answers_f64);
+
+            if (answers_f64.len >= @sizeOf(f64)) {
+                const answer_values = std.mem.bytesAsSlice(f64, answers_f64);
+                try stdOut.print("\nValidation:\n", .{});
+
+                const ref_answer_count = @divExact(answers_f64.len - @sizeOf(f64), @sizeOf(f64));
+                if (pair_count != ref_answer_count) {
+                    try stdOut.print("FAILED - pair count doesn't match: {d}", .{ref_answer_count});
+                }
+
+                const ref_sum = answer_values[ref_answer_count];
+                try stdOut.print("Reference sum: {d:.16}\n", .{ref_sum});
+                try stdOut.print("Difference: {d:.16}\n", .{sum - ref_sum});
+                try stdOut.print("\n", .{});
+            }
+        }
+    } else {
+        try stdErr.print("ERROR: Malformed input JSON\n", .{});
+    }
+}
