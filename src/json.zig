@@ -244,7 +244,8 @@ pub fn parseJson(input: []const u8, allocator: std.mem.Allocator) !?*JsonElement
     var parser = JsonParser{
         .source = input,
     };
-    var result = try parseJsonElement(&parser, &[_]u8{}, getJsonToken(&parser), allocator);
+    var token = getJsonToken(&parser);
+    var result = try parseJsonElement(&parser, &[_]u8{}, token, allocator);
     return result;
 }
 
