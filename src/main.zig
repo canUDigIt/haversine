@@ -107,7 +107,7 @@ pub fn main() !void {
 
                 const ref_answer_count = @divExact(answers_f64.len - @sizeOf(f64), @sizeOf(f64));
                 if (pair_count != ref_answer_count) {
-                    try stdOut.print("FAILED - pair count doesn't match: {d}", .{ref_answer_count});
+                    try stdOut.print("FAILED - pair count {d} doesn't match ref count {d}\n", .{ pair_count, ref_answer_count });
                 }
 
                 const ref_sum = answer_values[ref_answer_count];

@@ -62,7 +62,7 @@ pub fn isParsing(parser: *JsonParser) bool {
 
 pub fn jsonError(parser: *JsonParser, token: JsonToken, message: []const u8) JsonError!void {
     parser.had_error = true;
-    std.io.getStdErr().writer().print("ERROR: {s} - {s}", .{ token.value, message }) catch return JsonError.PrintStdErrorFailed;
+    std.io.getStdErr().writer().print("ERROR: {s} - {s}\n", .{ token.value, message }) catch return JsonError.PrintStdErrorFailed;
 }
 
 pub fn parseKeyword(source: []const u8, at: *u64, keyword_remaining: []const u8, t: JsonTokenType, result: *JsonToken) void {
@@ -156,6 +156,8 @@ pub fn getJsonToken(parser: *JsonParser) JsonToken {
         },
         else => {},
     }
+
+    parser.*.at = at;
 
     return result;
 }
