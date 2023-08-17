@@ -211,19 +211,17 @@ pub fn parseJsonList(parser: *JsonParser, starting_token: JsonToken, end_type: J
 }
 
 pub fn parseJsonElement(parser: *JsonParser, label: []const u8, value: JsonToken, allocator: std.mem.Allocator) JsonError!?*JsonElement {
-    var valid = false;
+    var valid = true;
     var sub_element: ?*JsonElement = null;
     switch (value.type) {
         .open_bracket => {
             sub_element = try parseJsonList(parser, value, .close_bracket, false, allocator);
-            valid = true;
         },
         .open_brace => {
-            sub_element = try parseJsonList(parser, value, .close_brace, false, allocator);
-            valid = true;
+            sub_element = try parseJsonList(parser, value, .close_brace, true, allocator);
         },
-        .string_literal, .true, .false, .null, .number => valid = true,
-        else => {},
+        .string_literal, .true, .false, .null, .number => {},
+        else => valid = true,
     }
 
     var result: ?*JsonElement = null;
