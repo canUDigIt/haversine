@@ -9,7 +9,7 @@ const HaversinePair = struct {
     y1: f64,
 };
 
-fn parseHaversinePairs(input_json: []const u8, max_pair_count: u64, pairs: []HaversinePair, allocator: std.mem.Allocator) !u64 {
+fn parseHaversinePairs(input_json: []const u8, max_pair_count: u64, pairs: *std.ArrayList(HaversinePair), allocator: std.mem.Allocator) !u64 {
     var pair_count: u64 = 0;
 
     const root = try json.parseJson(input_json, allocator);
@@ -19,12 +19,13 @@ fn parseHaversinePairs(input_json: []const u8, max_pair_count: u64, pairs: []Hav
             var element = array.first_sub_element;
             if (element) |el| {
                 while (pair_count < max_pair_count) {
-                    var pair = &pairs[pair_count];
-
-                    pair.*.x0 = json.convertElementToF64(el, "x0");
-                    pair.*.y0 = json.convertElementToF64(el, "y0");
-                    pair.*.x1 = json.convertElementToF64(el, "x1");
-                    pair.*.y1 = json.convertElementToF64(el, "y1");
+                    var pair = HaversinePair{
+                        .x0 = json.convertElementToF64(el, "x0"),
+                        .y0 = json.convertElementToF64(el, "y0"),
+                        .x1 = json.convertElementToF64(el, "x1"),
+                        .y1 = json.convertElementToF64(el, "y1"),
+                    };
+                    try pairs.append(pair);
 
                     pair_count += 1;
                 }
@@ -90,8 +91,8 @@ pub fn main() !void {
         var parsed_values = try std.ArrayList(HaversinePair).initCapacity(allocator, max_pair_count);
         defer parsed_values.deinit();
 
-        const pair_count = try parseHaversinePairs(input_json, max_pair_count, parsed_values.items, allocator);
-        const sum = sumHaversineDistances(pair_count, parsed_values.items);
+        const pair_count = try parseHaversinePairs(input_json, max_pair_count, &parsed_values, allocator);
+        const sum = sumHaversineDistances(pair_count, parsed_values.items[0..]);
 
         try stdOut.print("Input size: {d}\n", .{input_json.len});
         try stdOut.print("Pair count: {d}\n", .{pair_count});
