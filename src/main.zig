@@ -17,18 +17,18 @@ fn parseHaversinePairs(input_json: []const u8, max_pair_count: u64, pairs: *std.
         const pair_array = json.lookupElement(r, "pairs");
         if (pair_array) |array| {
             var element = array.first_sub_element;
-            if (element) |el| {
-                while (pair_count < max_pair_count) {
-                    var pair = HaversinePair{
-                        .x0 = json.convertElementToF64(el, "x0"),
-                        .y0 = json.convertElementToF64(el, "y0"),
-                        .x1 = json.convertElementToF64(el, "x1"),
-                        .y1 = json.convertElementToF64(el, "y1"),
-                    };
-                    try pairs.append(pair);
+            while (element) |el| : (element = el.next_sibling) {
+                var pair = HaversinePair{
+                    .x0 = json.convertElementToF64(el, "x0"),
+                    .y0 = json.convertElementToF64(el, "y0"),
+                    .x1 = json.convertElementToF64(el, "x1"),
+                    .y1 = json.convertElementToF64(el, "y1"),
+                };
+                try pairs.append(pair);
 
-                    pair_count += 1;
-                }
+                pair_count += 1;
+
+                if (pair_count >= max_pair_count) break;
             }
         }
 
@@ -92,7 +92,7 @@ pub fn main() !void {
         defer parsed_values.deinit();
 
         const pair_count = try parseHaversinePairs(input_json, max_pair_count, &parsed_values, allocator);
-        const sum = sumHaversineDistances(pair_count, parsed_values.items[0..]);
+        const sum = sumHaversineDistances(pair_count, parsed_values.items[0..pair_count]);
 
         try stdOut.print("Input size: {d}\n", .{input_json.len});
         try stdOut.print("Pair count: {d}\n", .{pair_count});
