@@ -42,17 +42,11 @@ pub fn isInBounds(source: []const u8, at: u64) bool {
 }
 
 pub fn isJsonDigit(source: []const u8, at: u64) bool {
-    var result = false;
-    const val = source[at];
-    result = ((val >= '0') and (val <= '9'));
-    return result;
+    return std.ascii.isDigit(source[at]);
 }
 
 pub fn isJsonWhitespace(source: []const u8, at: u64) bool {
-    var result = false;
-    const val = source[at];
-    result = ((val == ' ') or (val == '\t') or (val == '\n') or (val == '\r'));
-    return result;
+    return std.ascii.isWhitespace(source[at]);
 }
 
 pub fn isParsing(parser: *JsonParser) bool {
@@ -295,8 +289,8 @@ pub fn convertJsonNumber(source: []const u8, at_result: *u64) f64 {
     var at = at_result.*;
     var result: f64 = 0.0;
     while (isInBounds(source, at)) {
-        const char = source[at] - '0';
-        if (char < 10) {
+        const char = source[at];
+        if (std.ascii.isDigit(char)) {
             result = 10.0 * result + @as(f64, @floatFromInt(char));
             at += 1;
         } else {
@@ -318,7 +312,7 @@ pub fn convertElementToF64(object: *JsonElement, name: []const u8) f64 {
         var at: u64 = 0;
 
         const sign = convertJsonSign(source, &at);
-        var number = convertJsonSign(source, &at);
+        var number = convertJsonNumber(source, &at);
         if (isInBounds(source, at) and source[at] == '.') {
             at += 1;
             var c: f64 = 1.0 / 10.0;
