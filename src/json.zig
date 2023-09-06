@@ -42,10 +42,12 @@ pub fn isInBounds(source: []const u8, at: u64) bool {
 }
 
 pub fn isJsonDigit(source: []const u8, at: u64) bool {
+    // TODO(tracy): just replace usages of this function with line below
     return std.ascii.isDigit(source[at]);
 }
 
 pub fn isJsonWhitespace(source: []const u8, at: u64) bool {
+    // TODO(tracy): just replace usages of this function with line below
     return std.ascii.isWhitespace(source[at]);
 }
 
@@ -291,7 +293,8 @@ pub fn convertJsonNumber(source: []const u8, at_result: *u64) f64 {
     while (isInBounds(source, at)) {
         const char = source[at];
         if (std.ascii.isDigit(char)) {
-            result = 10.0 * result + @as(f64, @floatFromInt(char));
+            const digit = std.fmt.charToDigit(char, 10) catch continue;
+            result = 10.0 * result + @as(f64, @floatFromInt(digit));
             at += 1;
         } else {
             break;
