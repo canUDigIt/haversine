@@ -293,7 +293,7 @@ pub fn convertJsonNumber(source: []const u8, at_result: *u64) f64 {
     while (isInBounds(source, at)) {
         const char = source[at];
         if (std.ascii.isDigit(char)) {
-            const digit = std.fmt.charToDigit(char, 10) catch continue;
+            const digit = char - '0';
             result = 10.0 * result + @as(f64, @floatFromInt(digit));
             at += 1;
         } else {
@@ -320,13 +320,15 @@ pub fn convertElementToF64(object: *JsonElement, name: []const u8) f64 {
             at += 1;
             var c: f64 = 1.0 / 10.0;
             while (isInBounds(source, at)) {
-                const char = source[at] - '0';
-                if (char < 10) {
-                    number = number + c * @as(f64, @floatFromInt(char));
-                    c *= 1.0 / 10.0;
-                    at += 1;
-                } else {
-                    break;
+                const char = source[at];
+                switch (char) {
+                    '0'...'9' => {
+                        const digit = char - '0';
+                        number = number + c * @as(f64, @floatFromInt(digit));
+                        c *= 1.0 / 10.0;
+                        at += 1;
+                    },
+                    else => break,
                 }
             }
         }
