@@ -240,8 +240,8 @@ pub fn parseJson(input: []const u8, allocator: std.mem.Allocator) !?*JsonElement
     var parser = JsonParser{
         .source = input,
     };
-    var token = getJsonToken(&parser);
-    var result = try parseJsonElement(&parser, &[_]u8{}, token, allocator);
+    const token = getJsonToken(&parser);
+    const result = try parseJsonElement(&parser, &[_]u8{}, token, allocator);
     return result;
 }
 
@@ -249,7 +249,7 @@ pub fn freeJson(element: *JsonElement, allocator: std.mem.Allocator) void {
     var el = element;
     var done = false;
     while (!done) {
-        var free_element = el;
+        const free_element = el;
         if (el.next_sibling) |sibling| {
             el = sibling;
         } else {
@@ -309,7 +309,7 @@ pub fn convertJsonNumber(source: []const u8, at_result: *u64) f64 {
 pub fn convertElementToF64(object: *JsonElement, name: []const u8) f64 {
     var result: f64 = 0.0;
 
-    var element = lookupElement(object, name);
+    const element = lookupElement(object, name);
     if (element) |e| {
         const source = e.value;
         var at: u64 = 0;

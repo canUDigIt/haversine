@@ -13,8 +13,8 @@ pub fn square(a: f64) f64 {
 pub fn referenceHaversine(x0: f64, y0: f64, x1: f64, y1: f64, earthRadius: f64) f64 {
     var lat1 = y0;
     var lat2 = y1;
-    var lon1 = x0;
-    var lon2 = x1;
+    const lon1 = x0;
+    const lon2 = x1;
 
     const dLat = radiansFromDegrees(lat2 - lat1);
     const dLon = radiansFromDegrees(lon2 - lon1);

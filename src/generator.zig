@@ -47,7 +47,7 @@ pub fn main() !void {
     const count = try std.fmt.parseInt(u64, args[3], 10);
 
     var romu = std.rand.RomuTrio.init(seed);
-    var r = romu.random();
+    const r = romu.random();
 
     const json_filename = try std.fmt.allocPrint(allocator, "data-{d}-{s}.{s}", .{ count, "flex", "json" });
     defer allocator.free(json_filename);

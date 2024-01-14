@@ -18,7 +18,7 @@ fn parseHaversinePairs(input_json: []const u8, max_pair_count: u64, pairs: *std.
         if (pair_array) |array| {
             var element = array.first_sub_element;
             while (element) |el| : (element = el.next_sibling) {
-                var pair = HaversinePair{
+                const pair = HaversinePair{
                     .x0 = json.convertElementToF64(el, "x0"),
                     .y0 = json.convertElementToF64(el, "y0"),
                     .x1 = json.convertElementToF64(el, "x1"),
